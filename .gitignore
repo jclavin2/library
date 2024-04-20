@@ -1,6 +1,7 @@
 bin
 config/currentView
 test
+<<<<<<< HEAD
 
 # Ignore Gradle project-specific cache directory
 .gradle
@@ -11,3 +12,9 @@ build
 # Ignore IntelliJ IDEA setting folder
 .idea
 /gradle.properties
+=======
+.gradle
+library/.gradle
+
+*.lock
+>>>>>>> 93b7999 (BFT-SMaRT work)

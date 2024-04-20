@@ -72,4 +72,31 @@
 	  -->
 	<logger name="bftsmart.reconfiguration.util.RSAKeyLoader" level="TRACE"></logger>
 
+<<<<<<< HEAD
+=======
+  <logger name="io.netty" level="OFF">
+    <appender-ref ref="MIN-STDOUT" />
+  	<!--  <appender-ref ref="STDOUT" /> -->
+  </logger>
+  
+  
+  <logger name="bftsmart" level="INFO"> 
+  	<appender-ref ref="MIN-STDOUT" />
+  	<!-- <appender-ref ref="STDOUT" /> -->
+  </logger> 
+  
+
+  
+  <!-- SPECIFIC CLASS LOGS -->
+  <!--
+  
+  <logger name="bftsmart.consensus.roles.AcceptorSSLTLS" level="TRACE"></logger>
+  <logger name="bftsmart.consensus.roles.Acceptor" level="TRACE"></logger>
+  <logger name="bftsmart.communication.server.ServersCommunicationLayerSSLTLS" level="DEBUG"></logger>
+    	
+   <logger name="bftsmart.reconfiguration.util.ECDSAKeyLoader" level="TRACE"></logger>
+	-->
+  <logger name="bftsmart.reconfiguration.util.RSAKeyLoader" level="TRACE"></logger>
+  
+>>>>>>> 93b7999 (BFT-SMaRT work)
 </configuration>
