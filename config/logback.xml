@@ -72,8 +72,6 @@
 	  -->
 	<logger name="bftsmart.reconfiguration.util.RSAKeyLoader" level="TRACE"></logger>
 
-<<<<<<< HEAD
-=======
   <logger name="io.netty" level="OFF">
     <appender-ref ref="MIN-STDOUT" />
   	<!--  <appender-ref ref="STDOUT" /> -->
@@ -98,5 +96,4 @@
 	-->
   <logger name="bftsmart.reconfiguration.util.RSAKeyLoader" level="TRACE"></logger>
   
->>>>>>> 93b7999 (BFT-SMaRT work)
 </configuration>
