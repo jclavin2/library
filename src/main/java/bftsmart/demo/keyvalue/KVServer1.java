@@ -36,11 +36,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.RandomAccessFile;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import java.security.Security;
 
 public final class KVServer1 extends DefaultRecoverable {
     private int interval;
 
-    public final static String DEFAULT_CONFIG_FOLDER = "./config/";
+    public final static String DEFAULT_CONFIG_FOLDER = "/Users/jamesclavin/medical-data-polygraph/library/build/install/library/config";
     private int id;
     // private ServiceReplica replia = null;
     private ServiceReplica replica;
@@ -65,8 +67,7 @@ public final class KVServer1 extends DefaultRecoverable {
     public KVServer1(int id, int interval) { // throws IOException {
         this.interval = interval;
         this.id = id;
-        // this.configFolder = (configFolder != null ? configFolder:
-        // KVServer.DEFAULT_CONFIG_FOLDER);
+        this.configFolder = (configFolder != null ? configFolder : KVServer1.DEFAULT_CONFIG_FOLDER);
         this.sequence = 0;
         System.out.println("DEBUG KVServer1 constructor 0");
         totalLatency = new Storage(interval);
@@ -77,9 +78,9 @@ public final class KVServer1 extends DefaultRecoverable {
         writeLatency = new Storage(interval);
         acceptLatency = new Storage(interval);
         System.out.println("DEBUG KVServer1 constructor 1");
-        System.out.println("Use: java KVServer <processId>");
-
-        replica = new ServiceReplica(id, this, this);
+        System.out.println("DEBUG KVServer1 Use: java KVServer <processId>");
+        Security.addProvider(new BouncyCastleProvider());
+        replica = new ServiceReplica(id, this.configFolder, this, this);
         System.out.println("DEBUG KVServer1 constructor 2");
     }
 

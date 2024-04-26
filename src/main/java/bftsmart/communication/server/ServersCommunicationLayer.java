@@ -39,24 +39,28 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  *
  * @author alysson
- * Tulio A. Ribeiro.
- * Generate a KeyPair used by SSL/TLS connections. Note that keypass argument is
- * equal to the variable SECRET.
+ *         Tulio A. Ribeiro.
+ *         Generate a KeyPair used by SSL/TLS connections. Note that keypass
+ *         argument is
+ *         equal to the variable SECRET.
  *
- * The command generates the secret key.*/
-//## Elliptic Curve 
-//$keytool -genkey -keyalg EC -alias bftsmartEC -keypass MySeCreT_2hMOygBwY -keystore ./ecKeyPair -dname "CN=BFT-SMaRT"
-//$keytool -importkeystore -srckeystore ./ecKeyPair -destkeystore ./ecKeyPair -deststoretype pkcs12
+ *         The command generates the secret key.
+ */
+// ## Elliptic Curve
+// $keytool -genkey -keyalg EC -alias bftsmartEC -keypass MySeCreT_2hMOygBwY
+// -keystore ./ecKeyPair -dname "CN=BFT-SMaRT"
+// $keytool -importkeystore -srckeystore ./ecKeyPair -destkeystore ./ecKeyPair
+// -deststoretype pkcs12
 
-//## RSA 
-//$keytool -genkey -keyalg RSA -keysize 2048 -alias bftsmartRSA -keypass MySeCreT_2hMOygBwY -keystore ./RSA_KeyPair_2048.pkcs12 -dname "CN=BFT-SMaRT"
-//$keytool -importkeystore -srckeystore ./RSA_KeyPair_2048.pkcs12 -destkeystore ./RSA_KeyPair_2048.pkcs12 -deststoretype pkcs12
-
+// ## RSA
+// $keytool -genkey -keyalg RSA -keysize 2048 -alias bftsmartRSA -keypass
+// MySeCreT_2hMOygBwY -keystore ./RSA_KeyPair_2048.pkcs12 -dname "CN=BFT-SMaRT"
+// $keytool -importkeystore -srckeystore ./RSA_KeyPair_2048.pkcs12 -destkeystore
+// ./RSA_KeyPair_2048.pkcs12 -deststoretype pkcs12
 
 public class ServersCommunicationLayer extends Thread {
 
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
 
 	private final ServerViewController controller;
 	private final LinkedBlockingQueue<SystemMessage> inQueue;
@@ -78,8 +82,8 @@ public class ServersCommunicationLayer extends Thread {
 	private final SSLServerSocket serverSocketSSLTLS;
 
 	public ServersCommunicationLayer(ServerViewController controller,
-									 LinkedBlockingQueue<SystemMessage> inQueue,
-									 ServiceReplica replica) throws Exception {
+			LinkedBlockingQueue<SystemMessage> inQueue,
+			ServiceReplica replica) throws Exception {
 
 		this.controller = controller;
 		this.inQueue = inQueue;
@@ -90,21 +94,24 @@ public class ServersCommunicationLayer extends Thread {
 		String myAddress;
 		String confAddress = "";
 		try {
-			confAddress =
-					controller.getStaticConf().getRemoteAddress(controller.getStaticConf().getProcessId()).getAddress().getHostAddress();
+			confAddress = controller.getStaticConf().getRemoteAddress(controller.getStaticConf().getProcessId())
+					.getAddress().getHostAddress();
 		} catch (Exception e) {
 			// Now look what went wrong ...
 			logger.debug(" ####### Debugging at setting up the Communication layer ");
 			logger.debug("my Id is " + controller.getStaticConf().getProcessId()
-					+ " my remote Address is  " + controller.getStaticConf().getRemoteAddress(controller.getStaticConf().getProcessId()));
+					+ " my remote Address is  "
+					+ controller.getStaticConf().getRemoteAddress(controller.getStaticConf().getProcessId()));
 		}
 
 		if (InetAddress.getLoopbackAddress().getHostAddress().equals(confAddress)) {
 			myAddress = InetAddress.getLoopbackAddress().getHostAddress();
 		} else if (controller.getStaticConf().getBindAddress().isEmpty()) {
 			myAddress = InetAddress.getLocalHost().getHostAddress();
-			//If the replica binds to the loopback address, clients will not be able to connect to replicas.
-			//To solve that issue, we bind to the address supplied in config/hosts.config instead.
+			// If the replica binds to the loopback address, clients will not be able to
+			// connect to replicas.
+			// To solve that issue, we bind to the address supplied in config/hosts.config
+			// instead.
 			if (InetAddress.getByName(myAddress).isLoopbackAddress() && !myAddress.equals(confAddress)) {
 				myAddress = confAddress;
 			}
@@ -115,7 +122,9 @@ public class ServersCommunicationLayer extends Thread {
 		int myPort = controller.getStaticConf().getServerToServerPort(controller.getStaticConf().getProcessId());
 
 		KeyStore ks;
-		try (FileInputStream fis = new FileInputStream("config/keysSSL_TLS/" + controller.getStaticConf().getSSLTLSKeyStore())) {
+		try (FileInputStream fis = new FileInputStream(
+				"/Users/jamesclavin/medical-data-polygraph/library/build/install/library/config/keysSSL_TLS/"
+						+ controller.getStaticConf().getSSLTLSKeyStore())) {
 			ks = KeyStore.getInstance(KeyStore.getDefaultType());
 			ks.load(fis, SECRET.toCharArray());
 		}
@@ -141,19 +150,19 @@ public class ServersCommunicationLayer extends Thread {
 			logger.trace("Supported Cipher: {} ", cipher);
 		}
 
-		//serverSocketSSLTLS.setPerformancePreferences(0, 2, 1);
-		//serverSocketSSLTLS.setSoTimeout(connectionTimeoutMsec);
+		// serverSocketSSLTLS.setPerformancePreferences(0, 2, 1);
+		// serverSocketSSLTLS.setSoTimeout(connectionTimeoutMsec);
 		serverSocketSSLTLS.setEnableSessionCreation(true);
 		serverSocketSSLTLS.setReuseAddress(true);
 		serverSocketSSLTLS.setNeedClientAuth(true);
 		serverSocketSSLTLS.setWantClientAuth(true);
 
-
 		SecretKeyFactory fac = TOMUtil.getSecretFactory();
 		PBEKeySpec spec = TOMUtil.generateKeySpec(SECRET.toCharArray());
 		selfPwd = fac.generateSecret(spec);
 
-		//Try connecting if a member of the current view. Otherwise, wait until the Join has been processed!
+		// Try connecting if a member of the current view. Otherwise, wait until the
+		// Join has been processed!
 		if (controller.isInCurrentView()) {
 			int[] initialV = controller.getCurrentViewAcceptors();
 			for (int j : initialV) {
@@ -169,10 +178,11 @@ public class ServersCommunicationLayer extends Thread {
 	public SecretKey getSecretKey(int id) {
 		if (id == controller.getStaticConf().getProcessId())
 			return selfPwd;
-		else return connections.get(id).getSecretKey();
+		else
+			return connections.get(id).getSecretKey();
 	}
 
-	//******* EDUARDO BEGIN **************//
+	// ******* EDUARDO BEGIN **************//
 	public void updateConnections() {
 		connectionsLock.lock();
 
@@ -217,8 +227,7 @@ public class ServersCommunicationLayer extends Thread {
 		connectionsLock.unlock();
 		return ret;
 	}
-	//******* EDUARDO END **************//
-
+	// ******* EDUARDO END **************//
 
 	public final void send(int[] targets, SystemMessage sm, boolean useMAC) {
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream(248);
@@ -230,11 +239,13 @@ public class ServersCommunicationLayer extends Thread {
 
 		byte[] data = bOut.toByteArray();
 
-		// this shuffling is done to prevent the replica with the lowest ID/index  from being always
-		// the last one receiving the messages, which can result in that replica  to become consistently
+		// this shuffling is done to prevent the replica with the lowest ID/index from
+		// being always
+		// the last one receiving the messages, which can result in that replica to
+		// become consistently
 		// delayed in relation to the others.
-		/*Tulio A. Ribeiro*/
-		Integer[] targetsShuffled = Arrays.stream( targets ).boxed().toArray( Integer[]::new );
+		/* Tulio A. Ribeiro */
+		Integer[] targetsShuffled = Arrays.stream(targets).boxed().toArray(Integer[]::new);
 		Collections.shuffle(Arrays.asList(targetsShuffled), new Random(System.nanoTime()));
 
 		for (int target : targetsShuffled) {
@@ -244,7 +255,7 @@ public class ServersCommunicationLayer extends Thread {
 					inQueue.put(sm);
 					logger.debug("Queueing (delivering) my own message, me:{}", target);
 				} else {
-					logger.debug("Sending message from:{} -> to:{}.", me,  target);
+					logger.debug("Sending message from:{} -> to:{}.", me, target);
 					getConnection(target).send(data);
 				}
 			} catch (InterruptedException ex) {
@@ -259,7 +270,7 @@ public class ServersCommunicationLayer extends Thread {
 
 		doWork = false;
 
-		//******* EDUARDO BEGIN **************//
+		// ******* EDUARDO BEGIN **************//
 		int[] activeServers = controller.getCurrentViewAcceptors();
 
 		for (int activeServer : activeServers) {
@@ -269,7 +280,7 @@ public class ServersCommunicationLayer extends Thread {
 		}
 	}
 
-	//******* EDUARDO BEGIN **************//
+	// ******* EDUARDO BEGIN **************//
 	public void joinViewReceived() {
 		waitViewLock.lock();
 		for (PendingConnection pc : pendingConn) {
@@ -284,21 +295,21 @@ public class ServersCommunicationLayer extends Thread {
 
 		waitViewLock.unlock();
 	}
-	//******* EDUARDO END **************//
+	// ******* EDUARDO END **************//
 
 	@Override
 	public void run() {
 		while (doWork) {
 			try {
 
-				//System.out.println("Waiting for server connections");
+				// System.out.println("Waiting for server connections");
 
 				SSLSocket newSocket = (SSLSocket) serverSocketSSLTLS.accept();
 				setSSLSocketOptions(newSocket);
 
 				int remoteId = new DataInputStream(newSocket.getInputStream()).readInt();
 
-				//******* EDUARDO BEGIN **************//
+				// ******* EDUARDO BEGIN **************//
 				if (!this.controller.isInCurrentView() &&
 						(this.controller.getStaticConf().getTTPId() != remoteId)) {
 					waitViewLock.lock();
@@ -308,7 +319,7 @@ public class ServersCommunicationLayer extends Thread {
 					logger.debug("Trying establish connection with Replica: {}", remoteId);
 					establishConnection(newSocket, remoteId);
 				}
-				//******* EDUARDO END **************//
+				// ******* EDUARDO END **************//
 
 			} catch (SocketTimeoutException ex) {
 				logger.trace("Server socket timed out, retrying");
@@ -328,17 +339,17 @@ public class ServersCommunicationLayer extends Thread {
 		logger.info("ServerCommunicationLayer stopped.");
 	}
 
-	//******* EDUARDO BEGIN **************//
+	// ******* EDUARDO BEGIN **************//
 	private void establishConnection(SSLSocket newSocket, int remoteId) throws IOException {
 		if ((this.controller.getStaticConf().getTTPId() == remoteId) || this.controller.isCurrentViewMember(remoteId)) {
 			connectionsLock.lock();
-			if (this.connections.get(remoteId) == null) { //This must never happen!!!
-				//first time that this connection is being established
-				//System.out.println("THIS DOES NOT HAPPEN....."+remoteId);
+			if (this.connections.get(remoteId) == null) { // This must never happen!!!
+				// first time that this connection is being established
+				// System.out.println("THIS DOES NOT HAPPEN....."+remoteId);
 				this.connections.put(remoteId,
 						new ServerConnection(controller, newSocket, remoteId, inQueue, replica));
 			} else {
-				//reconnection
+				// reconnection
 				logger.debug("ReConnecting with replica: {}", remoteId);
 				this.connections.get(remoteId).reconnect(newSocket);
 			}
@@ -349,14 +360,13 @@ public class ServersCommunicationLayer extends Thread {
 			newSocket.close();
 		}
 	}
-	//******* EDUARDO END **************//
+	// ******* EDUARDO END **************//
 
 	public static void setSSLSocketOptions(SSLSocket socket) {
 		try {
 			socket.setTcpNoDelay(true);
 		} catch (SocketException ex) {
-			LoggerFactory.getLogger(ServersCommunicationLayer.class).
-					error("Failed to set TCPNODELAY", ex);
+			LoggerFactory.getLogger(ServersCommunicationLayer.class).error("Failed to set TCPNODELAY", ex);
 		}
 	}
 
@@ -375,14 +385,14 @@ public class ServersCommunicationLayer extends Thread {
 		int[] activeServers = controller.getCurrentViewAcceptors();
 		for (int activeServer : activeServers) {
 			if (me != activeServer) {
-				str.append(", connections[").append(activeServer).append("]: outQueue=").append(getConnection(activeServer).outQueue);
+				str.append(", connections[").append(activeServer).append("]: outQueue=")
+						.append(getConnection(activeServer).outQueue);
 			}
 		}
 		return str.toString();
 	}
 
-
-	//******* EDUARDO BEGIN: List entry that stores pending connections,
+	// ******* EDUARDO BEGIN: List entry that stores pending connections,
 	// as a server may accept connections only after learning the current view,
 	// i.e., after receiving the response to the join*************//
 	// This is for avoiding that the server accepts connectsion from everywhere
@@ -397,5 +407,5 @@ public class ServersCommunicationLayer extends Thread {
 		}
 	}
 
-	//******* EDUARDO END **************//
+	// ******* EDUARDO END **************//
 }

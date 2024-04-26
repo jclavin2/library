@@ -82,16 +82,24 @@ public class ServiceReplica {
     /**
      * Constructor
      *
+     * @param id         Replica ID
+     * @param configHome Configuration directory for BFT-SMART
+     * @param executor   Executor
+     * @param recoverer  Recoverer
+     */
+    public ServiceReplica(int id, String configHome, Executable executor, Recoverable recoverer) {
+        this(id, configHome, executor, recoverer, null, new DefaultReplier(), null);
+    }
+
+    /**
+     * Constructor
+     *
      * @param id        Replica ID
      * @param executor  Executor
      * @param recoverer Recoverer
      */
     public ServiceReplica(int id, Executable executor, Recoverable recoverer) {
         this(id, "", executor, recoverer, null, new DefaultReplier(), null);
-    }
-
-    public ServiceReplica(int id, String configHome, Executable executor, Recoverable recoverer) {
-        this(id, configHome, executor, recoverer, null, new DefaultReplier(), null);
     }
 
     /**
@@ -180,10 +188,6 @@ public class ServiceReplica {
         initReplica();
     }
 
-    /**
-     * 
-     * @deprecated
-     */
     public void joinMsgReceived(VMMessage msg) {
         ReconfigureReply r = msg.getReply();
 
@@ -204,9 +208,6 @@ public class ServiceReplica {
         repMan = new ReplyManager(SVController.getStaticConf().getNumRepliers(), cs);
     }
 
-    /**
-     * @deprecated
-     */
     public final void receiveReadonlyMessage(TOMMessage message, MessageContext msgCtx) {
         TOMMessage response;
 
@@ -289,10 +290,6 @@ public class ServiceReplica {
         t.start();
     }
 
-    /**
-     * 
-     * @deprecated
-     */
     public void receiveMessages(int consId[], int regencies[], int leaders[], CertifiedDecision[] cDecs,
             TOMMessage[][] requests) {
         int numRequests = 0;
@@ -319,6 +316,7 @@ public class ServiceReplica {
                     } else
                         switch (request.getReqType()) {
                             case ORDERED_REQUEST:
+                            case ORDERED_HASHED_REQUEST:
                                 noop = false;
                                 numRequests++;
                                 MessageContext msgCtx = new MessageContext(request.getSender(), request.getViewID(),
@@ -369,8 +367,10 @@ public class ServiceReplica {
                                     // deliver
                                     // to the clients. The raw decision is passed to the application in the line
                                     // above.
+                                    boolean isReplyHash = request.getReqType() == TOMMessageType.ORDERED_HASHED_REQUEST
+                                            && request.getReplyServer() != this.id;
                                     TOMMessage response = ((SingleExecutable) executor).executeOrdered(id,
-                                            SVController.getCurrentViewId(), request.getContent(), msgCtx);
+                                            SVController.getCurrentViewId(), isReplyHash, request.getContent(), msgCtx);
 
                                     if (response != null) {
 
@@ -471,8 +471,8 @@ public class ServiceReplica {
             msgContexts = msgCtxts.toArray(msgContexts);
 
             // Deliver the batch and wait for replies
-            TOMMessage[] replies = ((BatchExecutable) executor).executeBatch(id, SVController.getCurrentViewId(), batch,
-                    msgContexts);
+            TOMMessage[] replies = ((BatchExecutable) executor).executeBatch(id, SVController.getCurrentViewId(),
+                    isReplyHashes, batch, msgContexts);
 
             // Send the replies back to the client
             if (replies != null) {

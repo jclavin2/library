@@ -48,8 +48,7 @@ public class ServerConnection {
 	private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
 	private static final long POOL_TIME = 5000;
-	private final ServerViewController
-			controller;
+	private final ServerViewController controller;
 	private SSLSocket socket;
 	private DataOutputStream socketOutStream = null;
 	private DataInputStream socketInStream = null;
@@ -75,9 +74,9 @@ public class ServerConnection {
 	private static final String SECRET = "MySeCreT_2hMOygBwY";
 
 	public ServerConnection(ServerViewController controller,
-							SSLSocket socket, int remoteId,
-							LinkedBlockingQueue<SystemMessage> inQueue,
-							ServiceReplica replica) {
+			SSLSocket socket, int remoteId,
+			LinkedBlockingQueue<SystemMessage> inQueue,
+			ServiceReplica replica) {
 
 		this.controller = controller;
 
@@ -103,7 +102,7 @@ public class ServerConnection {
 			}
 		}
 
-		//******* EDUARDO BEGIN **************//
+		// ******* EDUARDO BEGIN **************//
 		this.useSenderThread = this.controller.getStaticConf().isUseSenderThread();
 
 		if (useSenderThread && (this.controller.getStaticConf().getTTPId() != remoteId)) {
@@ -114,16 +113,18 @@ public class ServerConnection {
 
 		if (!this.controller.getStaticConf().isTheTTP()) {
 			if (this.controller.getStaticConf().getTTPId() == remoteId) {
-				//Uma thread "diferente" para as msgs recebidas da TTP
+				// Uma thread "diferente" para as msgs recebidas da TTP
 				new TTPReceiverThread(replica).start();
 			} else {
 				new ReceiverThread().start();
 			}
 		}
-		//******* EDUARDO END **************//
+		// ******* EDUARDO END **************//
 	}
+
 	/**
 	 * Tulio A. Ribeiro.
+	 * 
 	 * @return SecretKey
 	 */
 	public SecretKey getSecretKey() {
@@ -136,8 +137,8 @@ public class ServerConnection {
 				fac = TOMUtil.getSecretFactory();
 				spec = TOMUtil.generateKeySpec(SECRET.toCharArray());
 				secretKey = fac.generateSecret(spec);
-			} catch (NoSuchAlgorithmException |InvalidKeySpecException e) {
-				logger.error("Algorithm error.",e);
+			} catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+				logger.error("Algorithm error.", e);
 			}
 		}
 		return secretKey;
@@ -147,7 +148,7 @@ public class ServerConnection {
 	 * Stop message sending and reception.
 	 */
 	public void shutdown() {
-		logger.debug("SHUTDOWN for "+remoteId);
+		logger.debug("SHUTDOWN for " + remoteId);
 
 		doWork = false;
 		closeSocket();
@@ -204,61 +205,67 @@ public class ServerConnection {
 		} while (doWork);
 	}
 
-	//******* EDUARDO BEGIN **************//
-	//return true of a process shall connect to the remote process, false otherwise
+	// ******* EDUARDO BEGIN **************//
+	// return true of a process shall connect to the remote process, false otherwise
 	private boolean isToConnect() {
 		if (this.controller.getStaticConf().getTTPId() == remoteId) {
-			//Need to wait for the connection request from the TTP, do not tray to connect to it
+			// Need to wait for the connection request from the TTP, do not tray to connect
+			// to it
 			return false;
 		} else if (this.controller.getStaticConf().getTTPId() == this.controller.getStaticConf().getProcessId()) {
-			//If this is a TTP, one must connect to the remote process
+			// If this is a TTP, one must connect to the remote process
 			return true;
 		}
 		boolean ret = false;
 		if (this.controller.isInCurrentView()) {
 
-			//in this case, the node with higher ID starts the connection
+			// in this case, the node with higher ID starts the connection
 			if (this.controller.getStaticConf().getProcessId() > remoteId) {
 				ret = true;
 			}
 
-			/* JCS: I commented the code below to fix a bug, but I am not sure
-			 whether its completely useless or not. The 'if' above was taken
-			 from that same code (its the only part I understand why is necessary)
-			 I keep the code commented just to be on the safe side
-
-
-
-			 boolean me = this.controller.isInLastJoinSet(this.controller.getStaticConf().getProcessId());
-			 boolean remote = this.controller.isInLastJoinSet(remoteId);
-
-			 //either both endpoints are old in the system (entered the system in a previous view),
-			 //or both entered during the last reconfiguration
-			 if ((me && remote) || (!me && !remote)) {
-			 //in this case, the node with higher ID starts the connection
-			 if (this.controller.getStaticConf().getProcessId() > remoteId) {
-			 ret = true;
-			 }
-			 //this process is the older one, and the other one entered in the last reconfiguration
-			 } else if (!me && remote) {
-			 ret = true;
-
-			 } //else if (me && !remote) { //this process entered in the last reconfig and the other one is old
-			 //ret=false; //not necessary, as ret already is false
-			 //}
-
+			/*
+			 * JCS: I commented the code below to fix a bug, but I am not sure
+			 * whether its completely useless or not. The 'if' above was taken
+			 * from that same code (its the only part I understand why is necessary)
+			 * I keep the code commented just to be on the safe side
+			 * 
+			 * 
+			 * 
+			 * boolean me =
+			 * this.controller.isInLastJoinSet(this.controller.getStaticConf().getProcessId(
+			 * ));
+			 * boolean remote = this.controller.isInLastJoinSet(remoteId);
+			 * 
+			 * //either both endpoints are old in the system (entered the system in a
+			 * previous view),
+			 * //or both entered during the last reconfiguration
+			 * if ((me && remote) || (!me && !remote)) {
+			 * //in this case, the node with higher ID starts the connection
+			 * if (this.controller.getStaticConf().getProcessId() > remoteId) {
+			 * ret = true;
+			 * }
+			 * //this process is the older one, and the other one entered in the last
+			 * reconfiguration
+			 * } else if (!me && remote) {
+			 * ret = true;
+			 * 
+			 * } //else if (me && !remote) { //this process entered in the last reconfig and
+			 * the other one is old
+			 * //ret=false; //not necessary, as ret already is false
+			 * //}
+			 * 
 			 */
 		}
 		return ret;
 	}
-	//******* EDUARDO END **************//
-
+	// ******* EDUARDO END **************//
 
 	/**
 	 * (Re-)establish connection between peers.
 	 *
 	 * @param newSocket socket created when this server accepted the connection
-	 * (only used if processId is less than remoteId)
+	 *                  (only used if processId is less than remoteId)
 	 */
 	protected void reconnect(SSLSocket newSocket) {
 
@@ -288,7 +295,6 @@ public class ServerConnection {
 		connectLock.unlock();
 	}
 
-
 	private void closeSocket() {
 
 		connectLock.lock();
@@ -298,7 +304,7 @@ public class ServerConnection {
 				socketOutStream.flush();
 				socket.close();
 			} catch (IOException ex) {
-				logger.debug("Error closing socket to "+remoteId);
+				logger.debug("Error closing socket to " + remoteId);
 			} catch (NullPointerException npe) {
 				logger.debug("Socket already closed");
 			}
@@ -338,7 +344,7 @@ public class ServerConnection {
 			byte[] data = null;
 
 			while (doWork) {
-				//get a message to be sent
+				// get a message to be sent
 				try {
 					data = outQueue.poll(POOL_TIME, TimeUnit.MILLISECONDS);
 				} catch (InterruptedException ex) {
@@ -388,15 +394,18 @@ public class ServerConnection {
 						SystemMessage sm = (SystemMessage) (new ObjectInputStream(new ByteArrayInputStream(data))
 								.readObject());
 
-						//The verification it is done for the SSL/TLS protocol.
+						// The verification it is done for the SSL/TLS protocol.
 						sm.authenticated = true;
 
 						if (sm.getSender() == remoteId) {
 							if (!inQueue.offer(sm)) {
 								logger.warn("Inqueue full (message from " + remoteId + " discarded).");
-							}/* else {
-								logger.trace("Message: {} queued, remoteId: {}", sm.toString(), sm.getSender());
-							}*/
+							} /*
+								 * else {
+								 * logger.trace("Message: {} queued, remoteId: {}", sm.toString(),
+								 * sm.getSender());
+								 * }
+								 */
 						}
 					} catch (ClassNotFoundException ex) {
 						logger.info("Invalid message received. Ignoring!");
@@ -416,10 +425,11 @@ public class ServerConnection {
 		}
 	}
 
-	//******* EDUARDO BEGIN: special thread for receiving messages indicating the entrance into the system, coming from the TTP **************//
+	// ******* EDUARDO BEGIN: special thread for receiving messages indicating the
+	// entrance into the system, coming from the TTP **************//
 	// Simly pass the messages to the replica, indicating its entry into the system
-	//TODO: Ask eduardo why a new thread is needed!!!
-	//TODO2: Remove all duplicated code
+	// TODO: Ask eduardo why a new thread is needed!!!
+	// TODO2: Remove all duplicated code
 
 	/**
 	 * Thread used to receive packets from the remote server.
@@ -472,12 +482,11 @@ public class ServerConnection {
 			}
 		}
 	}
-	//******* EDUARDO END **************//
-
+	// ******* EDUARDO END **************//
 
 	/**
 	 * Deal with the creation of SSL/TLS connection.
-	 *  Author: Tulio A. Ribeiro
+	 * Author: Tulio A. Ribeiro
 	 *
 	 */
 
@@ -495,17 +504,19 @@ public class ServerConnection {
 
 		String algorithm = Security.getProperty("ssl.KeyManagerFactory.algorithm");
 		try {
-			fis = new FileInputStream("config/keysSSL_TLS/" + this.controller.getStaticConf().getSSLTLSKeyStore());
+			fis = new FileInputStream(
+					"/Users/jamesclavin/medical-data-polygraph/library/build/install/library/config/keysSSL_TLS/"
+							+ this.controller.getStaticConf().getSSLTLSKeyStore());
 			ks = KeyStore.getInstance(KeyStore.getDefaultType());
 			ks.load(fis, SECRET.toCharArray());
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-			logger.error("SSL connection error.",e);
+			logger.error("SSL connection error.", e);
 		} finally {
 			if (fis != null) {
 				try {
 					fis.close();
 				} catch (IOException e) {
-					logger.error("IO error.",e);
+					logger.error("IO error.", e);
 				}
 			}
 		}
@@ -520,7 +531,7 @@ public class ServerConnection {
 			socketFactory = context.getSocketFactory();
 
 		} catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException | KeyManagementException e) {
-			logger.error("SSL connection error.",e);
+			logger.error("SSL connection error.", e);
 		}
 		// Create the connection.
 		try {
@@ -547,7 +558,7 @@ public class ServerConnection {
 		} catch (SocketException | UnknownHostException e) {
 			logger.error("Connection refused", e);
 		} catch (IOException e) {
-			logger.error("IO error.",e);
+			logger.error("IO error.", e);
 		}
 
 	}
